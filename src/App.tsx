@@ -1,6 +1,7 @@
 import { AppShell } from "@/layouts/app-shell"
 import { ProjectDetailPage } from "@/features/projects/project-detail-page"
 import { ProjectsPage } from "@/features/projects/projects-page"
+import { SnippetsPage } from "@/features/snippets/pages/snippets-page"
 import { DashboardPage } from "@/pages/dashboard"
 import { PlaceholderPage } from "@/pages/placeholder"
 
@@ -26,12 +27,7 @@ function getCurrentPage() {
   }
 
   if (pathname === "/snippets") {
-    return (
-      <PlaceholderPage
-        title="Snippets"
-        description="Aqui ficara a biblioteca pessoal de comandos, trechos e padroes reutilizaveis."
-      />
-    )
+    return <SnippetsPage />
   }
 
   if (pathname === "/ai") {

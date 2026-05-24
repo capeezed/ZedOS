@@ -92,6 +92,50 @@ export type Database = {
           },
         ]
       }
+      project_snippets: {
+        Row: {
+          id: string
+          project_id: string
+          title: string
+          description: string
+          code: string
+          language: string
+          tags: string[]
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          title: string
+          description?: string
+          code?: string
+          language?: string
+          tags?: string[]
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          title?: string
+          description?: string
+          code?: string
+          language?: string
+          tags?: string[]
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_snippets_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: Record<string, never>
     Functions: Record<string, never>

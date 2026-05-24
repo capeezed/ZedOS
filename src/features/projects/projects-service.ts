@@ -7,6 +7,10 @@ type ProjectRow = Database["public"]["Tables"]["projects"]["Row"]
 type ProjectInsert = Database["public"]["Tables"]["projects"]["Insert"]
 type ProjectUpdate = Database["public"]["Tables"]["projects"]["Update"]
 
+function raiseSupabaseError(error: { code?: string; message: string }): never {
+  throw new Error(error.code ? `${error.message} (${error.code})` : error.message)
+}
+
 function slugify(value: string) {
   return value
     .toLowerCase()
@@ -67,10 +71,10 @@ export async function listProjects() {
     .order("updated_at", { ascending: false })
 
   if (error) {
-    throw error
+    raiseSupabaseError(error)
   }
 
-  return data.map(mapProjectRow)
+  return (data ?? []).map(mapProjectRow)
 }
 
 export async function getProjectBySlug(slug: string) {
@@ -81,7 +85,7 @@ export async function getProjectBySlug(slug: string) {
     .maybeSingle()
 
   if (error) {
-    throw error
+    raiseSupabaseError(error)
   }
 
   return data ? mapProjectRow(data) : null
@@ -95,7 +99,11 @@ export async function createProject(input: CreateProjectInput) {
     .single()
 
   if (error) {
-    throw error
+    raiseSupabaseError(error)
+  }
+
+  if (!data) {
+    throw new Error("Projeto criado, mas o Supabase nao retornou o registro.")
   }
 
   return mapProjectRow(data)
@@ -110,7 +118,11 @@ export async function updateProject(id: string, input: UpdateProjectInput) {
     .single()
 
   if (error) {
-    throw error
+    raiseSupabaseError(error)
+  }
+
+  if (!data) {
+    throw new Error("Projeto atualizado, mas o Supabase nao retornou o registro.")
   }
 
   return mapProjectRow(data)
@@ -120,6 +132,6 @@ export async function deleteProject(id: string) {
   const { error } = await supabase.from("projects").delete().eq("id", id)
 
   if (error) {
-    throw error
+    raiseSupabaseError(error)
   }
 }

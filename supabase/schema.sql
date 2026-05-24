@@ -27,9 +27,28 @@ create table if not exists public.project_notes (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.project_snippets (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.projects(id) on delete restrict,
+  title text not null,
+  description text not null default '',
+  code text not null default '',
+  language text not null default 'text',
+  tags text[] not null default '{}',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists project_notes_project_id_created_at_idx
+on public.project_notes (project_id, created_at desc);
+
+create index if not exists project_snippets_project_id_created_at_idx
+on public.project_snippets (project_id, created_at desc);
+
 create or replace function public.set_updated_at()
 returns trigger
 language plpgsql
+set search_path = public
 as $$
 begin
   new.updated_at = now();
@@ -37,8 +56,57 @@ begin
 end;
 $$;
 
+create or replace function public.refresh_project_notes_count()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+declare
+  target_project_id uuid;
+begin
+  target_project_id = coalesce(new.project_id, old.project_id);
+
+  update public.projects
+  set notes_count = (
+    select count(*)::integer
+    from public.project_notes
+    where project_id = target_project_id
+  )
+  where id = target_project_id;
+
+  return coalesce(new, old);
+end;
+$$;
+
+create or replace function public.refresh_project_snippets_count()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+declare
+  target_project_id uuid;
+begin
+  target_project_id = coalesce(new.project_id, old.project_id);
+
+  update public.projects
+  set snippets_count = (
+    select count(*)::integer
+    from public.project_snippets
+    where project_id = target_project_id
+  )
+  where id = target_project_id;
+
+  return coalesce(new, old);
+end;
+$$;
+
 drop trigger if exists projects_set_updated_at on public.projects;
 drop trigger if exists project_notes_set_updated_at on public.project_notes;
+drop trigger if exists project_notes_refresh_count_insert on public.project_notes;
+drop trigger if exists project_notes_refresh_count_delete on public.project_notes;
+drop trigger if exists project_snippets_set_updated_at on public.project_snippets;
+drop trigger if exists project_snippets_refresh_count_insert on public.project_snippets;
+drop trigger if exists project_snippets_refresh_count_delete on public.project_snippets;
 
 create trigger projects_set_updated_at
 before update on public.projects
@@ -50,11 +118,38 @@ before update on public.project_notes
 for each row
 execute function public.set_updated_at();
 
+create trigger project_notes_refresh_count_insert
+after insert on public.project_notes
+for each row
+execute function public.refresh_project_notes_count();
+
+create trigger project_notes_refresh_count_delete
+after delete on public.project_notes
+for each row
+execute function public.refresh_project_notes_count();
+
+create trigger project_snippets_set_updated_at
+before update on public.project_snippets
+for each row
+execute function public.set_updated_at();
+
+create trigger project_snippets_refresh_count_insert
+after insert on public.project_snippets
+for each row
+execute function public.refresh_project_snippets_count();
+
+create trigger project_snippets_refresh_count_delete
+after delete on public.project_snippets
+for each row
+execute function public.refresh_project_snippets_count();
+
 alter table public.projects enable row level security;
 alter table public.project_notes enable row level security;
+alter table public.project_snippets enable row level security;
 
 grant select, insert, update, delete on table public.projects to anon, authenticated;
 grant select, insert, update, delete on table public.project_notes to anon, authenticated;
+grant select, insert, update, delete on table public.project_snippets to anon, authenticated;
 grant usage, select on all sequences in schema public to anon, authenticated;
 
 drop policy if exists "Allow project reads" on public.projects;
@@ -65,6 +160,10 @@ drop policy if exists "Allow project note reads" on public.project_notes;
 drop policy if exists "Allow project note inserts" on public.project_notes;
 drop policy if exists "Allow project note updates" on public.project_notes;
 drop policy if exists "Allow project note deletes" on public.project_notes;
+drop policy if exists "Allow project snippet reads" on public.project_snippets;
+drop policy if exists "Allow project snippet inserts" on public.project_snippets;
+drop policy if exists "Allow project snippet updates" on public.project_snippets;
+drop policy if exists "Allow project snippet deletes" on public.project_snippets;
 
 create policy "Allow project reads"
 on public.projects
@@ -112,6 +211,31 @@ with check (true);
 
 create policy "Allow project note deletes"
 on public.project_notes
+for delete
+to anon, authenticated
+using (true);
+
+create policy "Allow project snippet reads"
+on public.project_snippets
+for select
+to anon, authenticated
+using (true);
+
+create policy "Allow project snippet inserts"
+on public.project_snippets
+for insert
+to anon, authenticated
+with check (true);
+
+create policy "Allow project snippet updates"
+on public.project_snippets
+for update
+to anon, authenticated
+using (true)
+with check (true);
+
+create policy "Allow project snippet deletes"
+on public.project_snippets
 for delete
 to anon, authenticated
 using (true);
@@ -165,3 +289,15 @@ insert into public.projects (
     7
   )
 on conflict (slug) do nothing;
+
+update public.projects p
+set notes_count = counts.notes_count,
+    snippets_count = counts.snippets_count
+from (
+  select
+    p.id,
+    (select count(*)::integer from public.project_notes n where n.project_id = p.id) as notes_count,
+    (select count(*)::integer from public.project_snippets s where s.project_id = p.id) as snippets_count
+  from public.projects p
+) counts
+where p.id = counts.id;
