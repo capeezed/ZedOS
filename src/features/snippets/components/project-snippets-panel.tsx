@@ -14,9 +14,13 @@ import { ProjectSnippetForm } from "./project-snippet-form"
 
 type ProjectSnippetsPanelProps = {
   projectId: string
+  onChange?: () => void
 }
 
-export function ProjectSnippetsPanel({ projectId }: ProjectSnippetsPanelProps) {
+export function ProjectSnippetsPanel({
+  projectId,
+  onChange,
+}: ProjectSnippetsPanelProps) {
   const {
     filteredSnippets,
     snippets,
@@ -29,6 +33,16 @@ export function ProjectSnippetsPanel({ projectId }: ProjectSnippetsPanelProps) {
     addSnippet,
     removeSnippet,
   } = useProjectSnippets(projectId)
+
+  const handleAddSnippet = async (input: Parameters<typeof addSnippet>[0]) => {
+    await addSnippet(input)
+    onChange?.()
+  }
+
+  const handleRemoveSnippet = async (snippetId: string) => {
+    await removeSnippet(snippetId)
+    onChange?.()
+  }
 
   return (
     <Card className="rounded-lg bg-card/70">
@@ -60,7 +74,7 @@ export function ProjectSnippetsPanel({ projectId }: ProjectSnippetsPanelProps) {
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <ProjectSnippetForm onSubmit={addSnippet} />
+        <ProjectSnippetForm onSubmit={handleAddSnippet} />
 
         {isLoading && (
           <div className="flex items-center gap-2 rounded-lg border border-border/70 bg-background/40 px-3 py-2.5 text-sm text-muted-foreground">
@@ -125,7 +139,7 @@ export function ProjectSnippetsPanel({ projectId }: ProjectSnippetsPanelProps) {
                   size="icon-sm"
                   aria-label={`Excluir snippet ${snippet.title}`}
                   onClick={() => {
-                    void removeSnippet(snippet.id)
+                    void handleRemoveSnippet(snippet.id)
                   }}
                 >
                   <Trash2 />

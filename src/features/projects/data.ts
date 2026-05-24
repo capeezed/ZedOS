@@ -14,6 +14,8 @@ export const projects: Project[] = [
     nextAction: "Modelar Project, Note e Snippet no Prisma.",
     notesCount: 4,
     snippetsCount: 6,
+    tasksCount: 0,
+    linksCount: 0,
   },
   {
     id: "api-lab",
@@ -28,6 +30,8 @@ export const projects: Project[] = [
     nextAction: "Definir estrutura de services e repositories.",
     notesCount: 2,
     snippetsCount: 5,
+    tasksCount: 0,
+    linksCount: 0,
   },
   {
     id: "ui-system",
@@ -42,6 +46,8 @@ export const projects: Project[] = [
     nextAction: "Criar padroes de cards, listas e paineis.",
     notesCount: 3,
     snippetsCount: 7,
+    tasksCount: 0,
+    linksCount: 0,
   },
   {
     id: "desktop-automation",
@@ -56,5 +62,7 @@ export const projects: Project[] = [
     nextAction: "Mapear comandos frequentes do workflow diario.",
     notesCount: 1,
     snippetsCount: 0,
+    tasksCount: 0,
+    linksCount: 0,
   },
 ]

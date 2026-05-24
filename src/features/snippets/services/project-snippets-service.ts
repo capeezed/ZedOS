@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase"
 import type { Database } from "@/types/database"
+import { createActivityEvent } from "@/features/activity/services/activity-service"
 
 import type {
   CreateProjectSnippetInput,
@@ -102,10 +103,30 @@ export async function createProjectSnippet(input: CreateProjectSnippetInput) {
     throw new Error("Snippet criado, mas o Supabase nao retornou o registro.")
   }
 
-  return mapProjectSnippetRow(data)
+  const snippet = mapProjectSnippetRow(data)
+
+  await createActivityEvent({
+    type: "snippet_created",
+    title: `Snippet criado: ${snippet.title}`,
+    description: snippet.description || snippet.language,
+    projectId: snippet.projectId,
+    entityType: "project_snippet",
+    entityId: snippet.id,
+    metadata: {
+      language: snippet.language,
+    },
+  })
+
+  return snippet
 }
 
 export async function deleteProjectSnippet(snippetId: string) {
+  const { data: snippet } = await supabase
+    .from("project_snippets")
+    .select("*")
+    .eq("id", snippetId)
+    .maybeSingle()
+
   const { error } = await supabase
     .from("project_snippets")
     .delete()
@@ -113,5 +134,21 @@ export async function deleteProjectSnippet(snippetId: string) {
 
   if (error) {
     raiseSupabaseError(error)
+  }
+
+  if (snippet) {
+    const mappedSnippet = mapProjectSnippetRow(snippet)
+
+    await createActivityEvent({
+      type: "snippet_deleted",
+      title: `Snippet removido: ${mappedSnippet.title}`,
+      description: mappedSnippet.description || mappedSnippet.language,
+      projectId: mappedSnippet.projectId,
+      entityType: "project_snippet",
+      entityId: mappedSnippet.id,
+      metadata: {
+        language: mappedSnippet.language,
+      },
+    })
   }
 }

@@ -1,7 +1,10 @@
 import {
+  Activity,
   ArrowLeft,
+  CheckCircle2,
   Code2,
   FileText,
+  Link2,
   Loader2,
   Pencil,
   FolderKanban,
@@ -18,8 +21,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { ProjectActivityPanel } from "@/features/activity/components/project-activity-panel"
+import { ProjectLinksPanel } from "@/features/links/components/project-links-panel"
 import { ProjectNotesPanel } from "@/features/notes/components/project-notes-panel"
 import { ProjectSnippetsPanel } from "@/features/snippets/components/project-snippets-panel"
+import { ProjectTasksPanel } from "@/features/tasks/components/project-tasks-panel"
 import { PlaceholderPage } from "@/pages/placeholder"
 
 import { ProjectErrorState } from "./project-error-state"
@@ -32,7 +38,13 @@ type ProjectDetailPageProps = {
   projectId: string
 }
 
-type ProjectDetailTab = "overview" | "notes" | "snippets"
+type ProjectDetailTab =
+  | "overview"
+  | "notes"
+  | "snippets"
+  | "tasks"
+  | "links"
+  | "activity"
 
 const tabs: Array<{
   id: ProjectDetailTab
@@ -42,10 +54,20 @@ const tabs: Array<{
   { id: "overview", label: "Overview", icon: LayoutDashboard },
   { id: "notes", label: "Notes", icon: FileText },
   { id: "snippets", label: "Snippets", icon: Code2 },
+  { id: "tasks", label: "Tasks", icon: CheckCircle2 },
+  { id: "links", label: "Links", icon: Link2 },
+  { id: "activity", label: "Activity", icon: Activity },
 ]
 
 export function ProjectDetailPage({ projectId }: ProjectDetailPageProps) {
-  const { project, isLoading, error, saveProject, removeProject } = useProject(projectId)
+  const {
+    project,
+    isLoading,
+    error,
+    reload,
+    saveProject,
+    removeProject,
+  } = useProject(projectId)
   const [activeTab, setActiveTab] = useState<ProjectDetailTab>("overview")
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -132,7 +154,7 @@ export function ProjectDetailPage({ projectId }: ProjectDetailPageProps) {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline">
+          <Button variant="outline" onClick={() => setActiveTab("notes")}>
             <Sparkles />
             Capturar contexto
           </Button>
@@ -202,7 +224,7 @@ export function ProjectDetailPage({ projectId }: ProjectDetailPageProps) {
 
       {activeTab === "overview" && (
         <>
-          <section className="grid gap-3 md:grid-cols-4">
+          <section className="grid gap-3 md:grid-cols-6">
             <div className="rounded-lg border border-border/70 bg-card/70 p-4">
               <p className="text-sm text-muted-foreground">Area</p>
               <p className="mt-2 text-lg font-semibold">{project.area}</p>
@@ -219,9 +241,71 @@ export function ProjectDetailPage({ projectId }: ProjectDetailPageProps) {
               <p className="text-sm text-muted-foreground">Snippets</p>
               <p className="mt-2 text-lg font-semibold">{project.snippetsCount}</p>
             </div>
+            <div className="rounded-lg border border-border/70 bg-card/70 p-4">
+              <p className="text-sm text-muted-foreground">Tasks</p>
+              <p className="mt-2 text-lg font-semibold">{project.tasksCount}</p>
+            </div>
+            <div className="rounded-lg border border-border/70 bg-card/70 p-4">
+              <p className="text-sm text-muted-foreground">Links</p>
+              <p className="mt-2 text-lg font-semibold">{project.linksCount}</p>
+            </div>
           </section>
 
           <section className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
+            <Card className="rounded-lg bg-card/70 xl:col-span-2">
+              <CardHeader>
+                <CardTitle>Resumo contextual</CardTitle>
+                <CardDescription>
+                  Snapshot rapido da memoria operacional deste projeto.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-3 md:grid-cols-5">
+                <div className="rounded-lg border border-border/70 bg-background/40 p-3">
+                  <FileText className="size-4 text-muted-foreground" />
+                  <p className="mt-3 text-sm font-medium">
+                    {project.notesCount} notas
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Decisoes, contexto e observacoes persistidas.
+                  </p>
+                </div>
+                <div className="rounded-lg border border-border/70 bg-background/40 p-3">
+                  <Code2 className="size-4 text-muted-foreground" />
+                  <p className="mt-3 text-sm font-medium">
+                    {project.snippetsCount} snippets
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Comandos, queries e padroes reutilizaveis.
+                  </p>
+                </div>
+                <div className="rounded-lg border border-border/70 bg-background/40 p-3">
+                  <Activity className="size-4 text-muted-foreground" />
+                  <p className="mt-3 text-sm font-medium">Proxima acao</p>
+                  <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                    {project.nextAction || "Defina o menor passo util para continuar."}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-border/70 bg-background/40 p-3">
+                  <CheckCircle2 className="size-4 text-muted-foreground" />
+                  <p className="mt-3 text-sm font-medium">
+                    {project.tasksCount} tasks
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Execucao objetiva conectada ao contexto do projeto.
+                  </p>
+                </div>
+                <div className="rounded-lg border border-border/70 bg-background/40 p-3">
+                  <Link2 className="size-4 text-muted-foreground" />
+                  <p className="mt-3 text-sm font-medium">
+                    {project.linksCount} links
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Referencias externas sempre presas ao contexto.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card className="rounded-lg bg-card/70 xl:col-span-2">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -274,9 +358,23 @@ export function ProjectDetailPage({ projectId }: ProjectDetailPageProps) {
         </>
       )}
 
-      {activeTab === "notes" && <ProjectNotesPanel projectId={project.id} />}
+      {activeTab === "notes" && (
+        <ProjectNotesPanel projectId={project.id} onChange={reload} />
+      )}
 
-      {activeTab === "snippets" && <ProjectSnippetsPanel projectId={project.id} />}
+      {activeTab === "snippets" && (
+        <ProjectSnippetsPanel projectId={project.id} onChange={reload} />
+      )}
+
+      {activeTab === "tasks" && (
+        <ProjectTasksPanel projectId={project.id} onChange={reload} />
+      )}
+
+      {activeTab === "links" && (
+        <ProjectLinksPanel projectId={project.id} onChange={reload} />
+      )}
+
+      {activeTab === "activity" && <ProjectActivityPanel projectId={project.id} />}
     </div>
   )
 }

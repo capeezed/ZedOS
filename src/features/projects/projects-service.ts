@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase"
 import type { Database } from "@/types/database"
+import { createActivityEvent } from "@/features/activity/services/activity-service"
 
 import type { CreateProjectInput, Project, UpdateProjectInput } from "./types"
 
@@ -36,6 +37,8 @@ function mapProjectRow(row: ProjectRow): Project {
     nextAction: row.next_action,
     notesCount: row.notes_count,
     snippetsCount: row.snippets_count,
+    tasksCount: row.tasks_count,
+    linksCount: row.links_count,
   }
 }
 
@@ -106,7 +109,18 @@ export async function createProject(input: CreateProjectInput) {
     throw new Error("Projeto criado, mas o Supabase nao retornou o registro.")
   }
 
-  return mapProjectRow(data)
+  const project = mapProjectRow(data)
+
+  await createActivityEvent({
+    type: "project_created",
+    title: `Projeto criado: ${project.name}`,
+    description: project.description,
+    projectId: project.id,
+    entityType: "project",
+    entityId: project.id,
+  })
+
+  return project
 }
 
 export async function updateProject(id: string, input: UpdateProjectInput) {
@@ -125,7 +139,18 @@ export async function updateProject(id: string, input: UpdateProjectInput) {
     throw new Error("Projeto atualizado, mas o Supabase nao retornou o registro.")
   }
 
-  return mapProjectRow(data)
+  const project = mapProjectRow(data)
+
+  await createActivityEvent({
+    type: "project_updated",
+    title: `Projeto atualizado: ${project.name}`,
+    description: project.nextAction || project.description,
+    projectId: project.id,
+    entityType: "project",
+    entityId: project.id,
+  })
+
+  return project
 }
 
 export async function deleteProject(id: string) {

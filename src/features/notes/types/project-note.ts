@@ -6,6 +6,14 @@ export type ProjectNote = {
   createdAt: string
 }
 
+export type ProjectNoteWithProject = ProjectNote & {
+  project: {
+    id: string
+    slug: string
+    name: string
+  } | null
+}
+
 export type CreateProjectNoteInput = {
   projectId: string
   title: string

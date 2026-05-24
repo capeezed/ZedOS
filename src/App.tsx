@@ -1,4 +1,5 @@
 import { AppShell } from "@/layouts/app-shell"
+import { NotesPage } from "@/features/notes/pages/notes-page"
 import { ProjectDetailPage } from "@/features/projects/project-detail-page"
 import { ProjectsPage } from "@/features/projects/projects-page"
 import { SnippetsPage } from "@/features/snippets/pages/snippets-page"
@@ -18,12 +19,7 @@ function getCurrentPage() {
   }
 
   if (pathname === "/notes") {
-    return (
-      <PlaceholderPage
-        title="Notas"
-        description="A proxima etapa sera conectar notas tecnicas aos projetos."
-      />
-    )
+    return <NotesPage />
   }
 
   if (pathname === "/snippets") {

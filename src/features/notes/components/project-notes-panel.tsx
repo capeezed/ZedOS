@@ -14,11 +14,22 @@ import { ProjectNoteForm } from "./project-note-form"
 
 type ProjectNotesPanelProps = {
   projectId: string
+  onChange?: () => void
 }
 
-export function ProjectNotesPanel({ projectId }: ProjectNotesPanelProps) {
+export function ProjectNotesPanel({ projectId, onChange }: ProjectNotesPanelProps) {
   const { notes, isLoading, error, reload, addNote, removeNote } =
     useProjectNotes(projectId)
+
+  const handleAddNote = async (input: Parameters<typeof addNote>[0]) => {
+    await addNote(input)
+    onChange?.()
+  }
+
+  const handleRemoveNote = async (noteId: string) => {
+    await removeNote(noteId)
+    onChange?.()
+  }
 
   return (
     <Card className="rounded-lg bg-card/70">
@@ -33,7 +44,7 @@ export function ProjectNotesPanel({ projectId }: ProjectNotesPanelProps) {
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <ProjectNoteForm onSubmit={addNote} />
+        <ProjectNoteForm onSubmit={handleAddNote} />
 
         {isLoading && (
           <div className="flex items-center gap-2 rounded-lg border border-border/70 bg-background/40 px-3 py-2.5 text-sm text-muted-foreground">
@@ -76,7 +87,7 @@ export function ProjectNotesPanel({ projectId }: ProjectNotesPanelProps) {
                   size="icon-sm"
                   aria-label={`Excluir nota ${note.title}`}
                   onClick={() => {
-                    void removeNote(note.id)
+                    void handleRemoveNote(note.id)
                   }}
                 >
                   <Trash2 />

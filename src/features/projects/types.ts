@@ -15,6 +15,8 @@ export type Project = {
   nextAction: string
   notesCount: number
   snippetsCount: number
+  tasksCount: number
+  linksCount: number
 }
 
 export type CreateProjectInput = {
